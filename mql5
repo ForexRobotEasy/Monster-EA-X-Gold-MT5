@@ -1,0 +1,79 @@
+
+//+------------------------------------------------------------------+
+//| Expert advisor for trading in the gold market                     |
+//| Developed by Forex Robot Easy Team - forexroboteasy.com           |
+//+------------------------------------------------------------------+
+#include <stdlib.mqh>
+#include <trade.mqh>
+#include <timeseries.mqh>
+
+// Function to calculate linked numbers and settings
+double CalculateLinkedNumbers(double value)
+{
+    // Implementation of linked numbers calculation
+    double linkedValue = value * 1.5;
+    return linkedValue;
+}
+
+// Function to place pending orders at specific times
+void PlacePendingOrders()
+{
+    datetime currentTime = TimeCurrent();
+    datetime pendingTime = TimeLocal();
+    
+    // Check if it is the peak time for successful trades
+    if (currentTime == pendingTime)
+    {
+        // Place pending orders based on identified entry points
+        double entryPoint = CalculateLinkedNumbers(1.0);
+        double stopLoss = CalculateLinkedNumbers(0.5);
+        double takeProfit = CalculateLinkedNumbers(2.0);
+        
+        // Place pending buy order
+        OrderSend(Symbol(), OP_BUYSTOP, entryPoint, 5, 0, stopLoss, takeProfit);
+        
+        // Place pending sell order
+        OrderSend(Symbol(), OP_SELLSTOP, entryPoint, 5, 0, stopLoss, takeProfit);
+    }
+}
+
+// Function to execute pending orders
+void ExecutePendingOrders()
+{
+    // Check if there are any pending orders
+    if (OrdersTotal() > 0)
+    {
+        // Loop through all pending orders
+        for (int i = OrdersTotal() - 1; i >= 0; i--)
+        {
+            // Get the order ticket number
+            ulong ticket = OrderGetTicket(i);
+            
+            // Check if the order is a pending order
+            if (OrderType() == OP_BUYSTOP || OrderType() == OP_SELLSTOP)
+            {
+                // Execute the pending order
+                OrderSend(ticket, OP_SELL, OrderOpenPrice(), 5, 0, 0, 0);
+            }
+        }
+    }
+}
+
+// Function to operate on a 5-minute timeframe
+void OperateOn5MinuteTimeframe()
+{
+    // Check if the current timeframe is 5-minute
+    if (Period() == PERIOD_M5)
+    {
+        // Call the necessary trading functions
+        PlacePendingOrders();
+        ExecutePendingOrders();
+    }
+}
+
+// Entry point of the Expert Advisor
+void OnTick()
+{
+    // Operate strictly on a 5-minute timeframe
+    OperateOn5MinuteTimeframe();
+}
